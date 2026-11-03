@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">OfflinePay</string>
+    <string name="shortcut_scan_short">Scan QR</string>
+    <string name="shortcut_scan_long">Scan QR Code to Pay</string>
+    <string name="shortcut_history_short">History</string>
+    <string name="shortcut_history_long">View Transaction History</string>
+</resources>
