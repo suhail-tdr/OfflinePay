@@ -231,7 +231,7 @@ OfflinePay is an independent open-source application designed to assist users wi
 ## Author
 
 **Suhail PM**  
-* GitHub: [@suhail-tdr](https://github.com/suhail-tdr)  
+* GitHub: [@suhail-tdr](https://github.com/suhail-tdr) , [@abin41](https://github.com/abin41)   
 * Repository: [OfflinePay](https://github.com/suhail-tdr/OfflinePay)
 
 ---
