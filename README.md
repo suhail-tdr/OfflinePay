@@ -1,5 +1,5 @@
 # OfflinePay
-<<<<<<< HEAD
+
 > **Secure Offline UPI & USSD Payment Assistant for Android**
 
 OfflinePay is a modern, production-grade Android application designed for India that enables secure, instant UPI payments without requiring active mobile data or internet connectivity. Powered by Jetpack Compose, Material 3, and NPCI's official `*99#` NUUP USSD framework.
