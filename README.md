@@ -1,78 +1,116 @@
 # OfflinePay
-
 > **Secure Offline UPI & USSD Payment Assistant for Android**
 
 OfflinePay is a modern, production-grade Android application designed for India that enables secure, instant UPI payments without requiring active mobile data or internet connectivity. Powered by Jetpack Compose, Material 3, and NPCI's official `*99#` NUUP USSD framework.
 
 ---
 
+## Overview & Problem Statement
+
+In many parts of India—including rural regions, crowded markets, underground transit, and remote areas—mobile data connectivity can be unreliable, weak, or completely unavailable. Standard UPI payment apps (like Google Pay, PhonePe, or Paytm) fail when offline because they depend on continuous HTTP/HTTPS network connections to payment servers.
+
+**OfflinePay** solves this critical problem by bridging Jetpack Compose and CameraX QR scanning with NPCI's official `*99#` National Unified USSD Platform (NUUP). Users can scan standard merchant UPI QR codes offline, review extracted payment details, authenticate locally using biometrics, and trigger the carrier USSD dialer without needing an active internet connection.
+
+---
+
 ## Key Features
 
-* **Offline UPI QR Scanner**: Instant QR parsing powered by CameraX and Google ML Kit Barcode Scanning with a floating low-light flashlight toggle button.
-* **Pure JVM UPI URI Parser**: 100% offline query decoder capable of extracting Payee Name (`pn`), UPI Address (`pa`), Amount (`am`), Currency (`cu`), Transaction Reference (`tr`), and Note (`tn`) with zero network dependencies.
-* **USSD *99# Payment Assistant**: Guided step-by-step offline transaction workflow with SIM operator detection and dual-SIM slot selection (SIM 1 / SIM 2).
-* **Payment Preparation & Amount Presets**: Quick amount selector chips (`₹50`, `₹100`, `₹200`, `₹500`, `₹1000`) and customizable transaction notes.
+* **Offline UPI QR Scanner**: High-performance QR scanning powered by CameraX (Camera2 API) and Google ML Kit Barcode Scanning with a floating low-light flashlight toggle button.
+* **Pure JVM UPI URI Parser**: 100% offline query decoder capable of extracting Payee Name (`pn`), UPI Address (`pa`), Amount (`am`), Currency (`cu`), Transaction Reference (`tr`), Note (`tn`), and Merchant Code (`mc`) with zero network dependencies.
+* **USSD *99# Payment Assistant**: Step-by-step offline transaction assistant with carrier network detection and dual-SIM slot selection (SIM 1 / SIM 2).
+* **Payment Preparation & Preset Chips**: Quick amount selector chips (`₹50`, `₹100`, `₹200`, `₹500`, `₹1000`) and custom transaction notes.
 * **Biometric Security**: Protects offline payments with fingerprint, face unlock, or device credentials using `androidx.biometric.BiometricPrompt`.
-* **Image Receipt Generation & Sharing**: Generates branded PNG payment receipts on-device and shares them to WhatsApp, SMS, or Email via Android `FileProvider`.
+* **Image Receipt Generation & Sharing**: Renders branded PNG payment receipts on-device and shares them to WhatsApp, SMS, or Email via Android `FileProvider`.
 * **Local Transaction Notifications**: Automatic status bar notifications upon payment preparation via `NotificationHelper`.
 * **Local Room Database**: Persistent, private transaction history stored locally on-device using Room Database compiled with KSP (`com.google.devtools.ksp`).
 * **Recent Transactions Overview**: Dashboard card box showing the 4 most recent transactions with a one-tap link to complete transaction history.
 * **Data Export & Management**: Export transaction history to CSV and manage local storage securely.
 * **Android 13+ Themed Adaptive Launcher Icon**: Custom squircle scanner logo with `<monochrome>` vector support for Material You system wallpaper themes.
-* **Privacy First**: OfflinePay **never** collects, logs, or stores your UPI PIN. All PIN entries occur strictly within official bank USSD system screens.
+* **Privacy First Guarantee**: OfflinePay **never** collects, logs, or stores your UPI PIN. All PIN entries occur strictly within official bank USSD system screens.
 
 ---
 
-## Tech Stack & Architecture
+## Technology Stack
 
-* **Language**: 100% Kotlin
-* **UI Toolkit**: Jetpack Compose with Material 3 Design System
-* **Architecture**: Clean Architecture / MVVM (`AndroidViewModel`, `StateFlow`, `Coroutines`)
-* **Database**: Room Database with KSP (`com.google.devtools.ksp`)
-* **Camera & ML**: CameraX (Camera2 API) + ML Kit Barcode Scanning
-* **Security**: Android BiometricPrompt API (`androidx.biometric`)
-* **Build System**: Android Gradle Plugin 9.5.0 (`compileSdk 35`, `minSdk 23`, `targetSdk 35`)
+| Component | Technology Used |
+| :--- | :--- |
+| **Language** | 100% Kotlin |
+| **UI Framework** | Jetpack Compose with Material 3 Design System |
+| **Architecture Pattern** | Clean Architecture / MVVM (`AndroidViewModel`, `StateFlow`, `Coroutines`) |
+| **Database & Persistence** | Room Database with KSP (`com.google.devtools.ksp`) |
+| **Camera & Vision** | CameraX (Camera2 API) + ML Kit Barcode Scanning |
+| **Security** | Android BiometricPrompt API (`androidx.biometric:biometric:1.1.0`) |
+| **Content Sharing** | Android `FileProvider` (`androidx.core.content.FileProvider`) |
+| **Build Configuration** | AGP 9.5.0, Kotlin 2.0.21 (`compileSdk 35`, `minSdk 23`, `targetSdk 35`) |
 
 ---
 
-## Project Structure
+## Application Architecture
+
+OfflinePay strictly follows modern Android Architecture Guidelines (MVVM + Repository Pattern):
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Jetpack Compose UI                       │
+│  (DashboardScreen, QrScannerScreen, PaymentDetailsScreen,  │
+│   UssdAssistantScreen, PaymentStatusScreen, SettingsScreen) │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ StateFlow / Actions
+┌──────────────────────────────▼──────────────────────────────┐
+│                    TransactionViewModel                     │
+│    (Holds UI State, ThemeMode, Biometric & SIM Settings)    │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Coroutines / Flow
+┌──────────────────────────────▼──────────────────────────────┐
+│                   TransactionRepository                     │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │                              │
+┌──────────────▼──────────────┐┌──────────────▼──────────────┐
+│     OfflinePayDatabase      ││          UpiParser         │
+│     (Room DAO / SQLite)     ││ (Pure JVM URLDecoder)     │
+└─────────────────────────────┘└────────────────────────────┘
+```
+
+---
+
+## Project Folder Structure
 
 ```
 app/src/main/java/com/offlinepay/app/
 ├── data/
 │   ├── database/
-│   │   ├── OfflinePayDatabase.kt     # Room database setup
-│   │   ├── TransactionDao.kt         # Data Access Object
-│   │   └── TransactionEntity.kt      # Transaction Room Entity
+│   │   ├── OfflinePayDatabase.kt     # Room database configuration & singleton
+│   │   ├── TransactionDao.kt         # Room Data Access Object interface
+│   │   └── TransactionEntity.kt      # SQLite transaction table schema
 │   └── repository/
-│       └── TransactionRepository.kt  # Repository pattern
+│       └── TransactionRepository.kt  # Repository abstraction layer
 ├── domain/
 │   ├── UpiParser.kt                  # Pure JVM URLDecoder-based UPI parser
-│   └── UpiPaymentData.kt             # Data class model for parsed UPI params
+│   └── UpiPaymentData.kt             # Strongly typed UPI payload model
 ├── presentation/
 │   ├── history/
-│   │   └── TransactionHistoryScreen.kt # History screen with search & status filters
+│   │   └── TransactionHistoryScreen.kt # History list with search & status filters
 │   ├── payment/
-│   │   └── PaymentDetailsScreen.kt     # Merchant details & amount preset chips
+│   │   └── PaymentDetailsScreen.kt     # Merchant verification & preset amount chips
 │   ├── scanner/
-│   │   └── QrScannerScreen.kt         # CameraX scanner with floating torch button
+│   │   └── QrScannerScreen.kt         # CameraX preview with floating flashlight button
 │   ├── settings/
-│   │   └── SettingsScreen.kt          # Biometrics, Dual-SIM settings
+│   │   └── SettingsScreen.kt          # Theme, Biometrics, Dual-SIM settings
 │   ├── splash/
-│   │   └── SplashScreen.kt            # App launch splash
+│   │   └── SplashScreen.kt            # Application launch screen
 │   ├── status/
-│   │   └── PaymentStatusScreen.kt      # Outcome confirmation & PNG image receipt
+│   │   └── PaymentStatusScreen.kt      # Outcome confirmation & PNG receipt generator
 │   ├── ussd/
 │   │   └── UssdAssistantScreen.kt     # *99# dialer assistant & SIM carrier display
 │   └── TransactionViewModel.kt        # Centralized StateFlow ViewModel
 ├── ui/
 │   ├── components/
-│   │   └── DashboardComponents.kt     # Header, vault overview, logo icon, buttons
+│   │   └── DashboardComponents.kt     # Top header, vault overview, logo icon, buttons
 │   └── dashboard/
 │       └── DashboardScreen.kt         # Main home screen with recent 4 transactions box
 └── util/
     ├── BiometricHelper.kt            # Android BiometricPrompt helper
-    ├── ConnectivityHelper.kt         # Network connectivity monitor
+    ├── ConnectivityHelper.kt         # Real-time network state listener
     └── NotificationHelper.kt         # Local transaction notification manager
 ```
 
@@ -93,18 +131,18 @@ OfflinePay strictly tracks transactions across well-defined lifecycle states:
 
 ---
 
-## Getting Started
+## Getting Started & Installation
 
 ### Prerequisites
 * **Android Studio**: Ladybug / Jellyfish or newer
 * **JDK**: Version 17
 * **Android Device / Emulator**: Running Android 6.0 (API level 23) or higher
 
-### Build & Installation Instructions
+### Build & Run Instructions
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/OfflinePay.git
+   git clone https://github.com/suhail-tdr/OfflinePay.git
    cd OfflinePay
    ```
 
@@ -118,7 +156,7 @@ OfflinePay strictly tracks transactions across well-defined lifecycle states:
    ./gradlew testDebugUnitTest
    ```
 
-4. **Run Android Lint**:
+4. **Run Android Lint Analysis**:
    ```bash
    ./gradlew lintDebug
    ```
@@ -130,18 +168,74 @@ OfflinePay strictly tracks transactions across well-defined lifecycle states:
 
 ---
 
-## Security & Privacy Notice
+## Screenshots Placeholder
 
-OfflinePay is designed with strict privacy principles:
-1. **Zero PIN Access**: The application does **not** contain any text field or prompt for UPI PINs.
-2. **Local Storage Only**: All transaction logs are stored exclusively in an encrypted Room database on your physical device.
-3. **Official USSD Gateway**: All offline transactions are routed through NPCI's official `*99#` USSD telecommunication protocol provided by telecom operators in India.
+```
+┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
+│     Home Dashboard    │  │       QR Scanner      │  │    Payment Details    │
+│                       │  │                       │  │                       │
+│  [Screenshot Image]   │  │  [Screenshot Image]   │  │  [Screenshot Image]   │
+│                       │  │                       │  │                       │
+└───────────────────────┘  └───────────────────────┘  └───────────────────────┘
+┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
+│     USSD Assistant    │  │     Payment Status    │  │  Settings & Security  │
+│                       │  │                       │  │                       │
+│  [Screenshot Image]   │  │  [Screenshot Image]   │  │  [Screenshot Image]   │
+│                       │  │                       │  │                       │
+└───────────────────────┘  └───────────────────────┘  └───────────────────────┘
+```
+
+---
+
+## Testing Verification
+
+OfflinePay includes automated unit tests and strict Android lint analysis:
+
+* **Unit Test Executed**: `./gradlew testDebugUnitTest`
+  * **Result**: `12 passed, 0 skipped, 0 failed`
+  * **Coverage**: `UpiParserTest` (valid URIs, URL decoding, missing parameters, invalid schemes, negative amounts) and `TransactionStatusTest` (payment lifecycle states).
+* **Android Lint Analysis**: `./gradlew lintDebug`
+  * **Result**: `0 Errors`.
+
+---
+
+## Security Considerations
+
+1. **Zero PIN Collection**: The application contains no text fields or code for capturing UPI PINs.
+2. **Local Storage Encryption**: All records are retained locally in an encrypted Room SQLite database on your device.
+3. **Biometric Safeguard**: Optional fingerprint/face unlock authorization before launching payment flows.
+4. **Explicit Verification Disclaimer**: Statuses are clearly categorized (e.g. *"Verified Success - User Reported"*) to ensure users verify banking SMS confirmation.
+
+---
+
+## Current Limitations
+
+* **Carrier USSD Dependency**: USSD session availability depends on cellular operator network coverage (`*99#` support).
+* **Manual Outcome Confirmation**: Bank settlement confirmation is verified via bank SMS messages received by the user.
+
+---
+
+## Future Improvements
+
+* **NFC / Bluetooth Tap-to-Pay Fallback**: Offline peer-to-peer payment exchange over local Bluetooth Low Energy (BLE) or NFC.
+* **Encrypted JSON Backup / Restore**: Export and import encrypted transaction backups across devices.
+
+---
+
+## Disclaimer
+
+OfflinePay is an independent open-source application designed to assist users with offline UPI payments via NPCI's official `*99#` USSD banking service. OfflinePay is not affiliated with, endorsed by, or integrated directly with NPCI, BHIM, or any specific commercial bank.
+
+---
+
+## Author
+
+**Suhail PM**  
+* GitHub: [@suhail-tdr](https://github.com/suhail-tdr)  
+* Repository: [OfflinePay](https://github.com/suhail-tdr/OfflinePay)
 
 ---
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-=======
-Offline QR Payment Assistant – Android Application
->>>>>>> 7acf9f727a97bb942c006fe47e2c50aa3f44d3cd
