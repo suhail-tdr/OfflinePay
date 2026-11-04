@@ -8,6 +8,7 @@ import com.offlinepay.app.data.database.TransactionEntity
 import com.offlinepay.app.data.repository.TransactionRepository
 import com.offlinepay.app.domain.UpiParser
 import com.offlinepay.app.domain.UpiPaymentData
+import com.offlinepay.app.util.BackupHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -113,6 +114,26 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
                         verificationSource = verificationSource
                     )
                 )
+            }
+        }
+    }
+
+    fun exportBackupJson(): String {
+        return BackupHelper.exportToJson(allTransactions.value)
+    }
+
+    fun restoreBackupJson(jsonString: String, onRestored: (Int) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val list = BackupHelper.importFromJson(jsonString)
+                var count = 0
+                for (tx in list) {
+                    repository.insertTransaction(tx)
+                    count++
+                }
+                onRestored(count)
+            } catch (e: Exception) {
+                onRestored(0)
             }
         }
     }
