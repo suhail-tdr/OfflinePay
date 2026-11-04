@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.offlinepay.app.presentation.TransactionViewModel
 import java.util.concurrent.Executors
@@ -71,11 +73,17 @@ fun QrScannerScreen(
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
 
+    val barcodeOptions = remember {
+        BarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+            .build()
+    }
+
     Scaffold(
         topBar = {
             @kotlin.OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
-                title = { Text("Scan Merchant UPI QR", color = Color.White) },
+                title = { Text("Scan Bank / Merchant UPI QR", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
@@ -114,7 +122,7 @@ fun QrScannerScreen(
                                 it.setSurfaceProvider(previewView.surfaceProvider)
                             }
 
-                            val scanner = BarcodeScanning.getClient()
+                            val scanner = BarcodeScanning.getClient(barcodeOptions)
                             val imageAnalysis = ImageAnalysis.Builder()
                                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                 .build()
@@ -137,6 +145,15 @@ fun QrScannerScreen(
                                     imageAnalysis
                                 )
                                 cameraControl = camera.cameraControl
+
+                                // Tap to focus on camera preview
+                                previewView.setOnTouchListener { _, event ->
+                                    val factory = previewView.meteringPointFactory
+                                    val point = factory.createPoint(event.x, event.y)
+                                    val action = FocusMeteringAction.Builder(point).build()
+                                    cameraControl?.startFocusAndMetering(action)
+                                    true
+                                }
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
@@ -187,7 +204,7 @@ fun QrScannerScreen(
                     }
 
                     Text(
-                        text = if (isFlashOn) "Flash ON" else "Tap for Flashlight",
+                        text = if (isFlashOn) "Flash ON" else "Tap screen to focus / Flashlight below",
                         color = Color.White,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -234,8 +251,11 @@ private fun processImageProxy(
         scanner.process(image)
             .addOnSuccessListener { barcodes ->
                 for (barcode in barcodes) {
-                    barcode.rawValue?.let { value ->
-                        onQrDetected(value)
+                    val candidate = barcode.rawValue
+                        ?: barcode.displayValue
+                        ?: barcode.url?.url
+                    if (!candidate.isNullOrBlank()) {
+                        onQrDetected(candidate)
                         return@addOnSuccessListener
                     }
                 }
