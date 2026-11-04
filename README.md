@@ -20,11 +20,12 @@ In many parts of India—including rural regions, crowded markets, underground t
 * **USSD *99# Payment Assistant**: Step-by-step offline transaction assistant with carrier network detection and dual-SIM slot selection (SIM 1 / SIM 2).
 * **Payment Preparation & Preset Chips**: Quick amount selector chips (`₹50`, `₹100`, `₹200`, `₹500`, `₹1000`) and custom transaction notes.
 * **Biometric Security**: Protects offline payments with fingerprint, face unlock, or device credentials using `androidx.biometric.BiometricPrompt`.
+* **Encrypted JSON Backup & Restore**: Export and import encrypted transaction history backups locally to/from JSON files via `BackupHelper`.
 * **Image Receipt Generation & Sharing**: Renders branded PNG payment receipts on-device and shares them to WhatsApp, SMS, or Email via Android `FileProvider`.
 * **Local Transaction Notifications**: Automatic status bar notifications upon payment preparation via `NotificationHelper`.
 * **Local Room Database**: Persistent, private transaction history stored locally on-device using Room Database compiled with KSP (`com.google.devtools.ksp`).
 * **Recent Transactions Overview**: Dashboard card box showing the 4 most recent transactions with a one-tap link to complete transaction history.
-* **Data Export & Management**: Export transaction history to CSV and manage local storage securely.
+* **Data Export & Management**: Export transaction history to CSV/JSON and manage local storage securely.
 * **Android 13+ Themed Adaptive Launcher Icon**: Custom squircle scanner logo with `<monochrome>` vector support for Material You system wallpaper themes.
 * **Privacy First Guarantee**: OfflinePay **never** collects, logs, or stores your UPI PIN. All PIN entries occur strictly within official bank USSD system screens.
 
@@ -95,7 +96,7 @@ app/src/main/java/com/offlinepay/app/
 │   ├── scanner/
 │   │   └── QrScannerScreen.kt         # CameraX preview with floating flashlight button
 │   ├── settings/
-│   │   └── SettingsScreen.kt          # Theme, Biometrics, Dual-SIM settings
+│   │   └── SettingsScreen.kt          # Theme, Biometrics, Dual-SIM & Backup settings
 │   ├── splash/
 │   │   └── SplashScreen.kt            # Application launch screen
 │   ├── status/
@@ -109,6 +110,7 @@ app/src/main/java/com/offlinepay/app/
 │   └── dashboard/
 │       └── DashboardScreen.kt         # Main home screen with recent 4 transactions box
 └── util/
+    ├── BackupHelper.kt               # JSON Backup & Restore helper (AES-256 GCM)
     ├── BiometricHelper.kt            # Android BiometricPrompt helper
     ├── ConnectivityHelper.kt         # Real-time network state listener
     └── NotificationHelper.kt         # Local transaction notification manager
@@ -192,8 +194,8 @@ OfflinePay strictly tracks transactions across well-defined lifecycle states:
 OfflinePay includes automated unit tests and strict Android lint analysis:
 
 * **Unit Test Executed**: `./gradlew testDebugUnitTest`
-  * **Result**: `12 passed, 0 skipped, 0 failed`
-  * **Coverage**: `UpiParserTest` (valid URIs, URL decoding, missing parameters, invalid schemes, negative amounts) and `TransactionStatusTest` (payment lifecycle states).
+  * **Result**: `14 passed, 0 skipped, 0 failed`
+  * **Coverage**: `UpiParserTest` (valid URIs, uppercase bank QRs, BharatQR EMVCo POS payloads, direct VPAs, URL decoding, missing parameters, invalid schemes, negative amounts) and `TransactionStatusTest` (payment lifecycle states).
 * **Android Lint Analysis**: `./gradlew lintDebug`
   * **Result**: `0 Errors`.
 
@@ -218,7 +220,6 @@ OfflinePay includes automated unit tests and strict Android lint analysis:
 ## Future Improvements
 
 * **NFC / Bluetooth Tap-to-Pay Fallback**: Offline peer-to-peer payment exchange over local Bluetooth Low Energy (BLE) or NFC.
-* **Encrypted JSON Backup / Restore**: Export and import encrypted transaction backups across devices.
 
 ---
 
@@ -228,11 +229,12 @@ OfflinePay is an independent open-source application designed to assist users wi
 
 ---
 
-## Author
+## Authors
 
-**Suhail PM**  
-* GitHub: [@suhail-tdr](https://github.com/suhail-tdr) , [@abin41](https://github.com/abin41)   
-* Repository: [OfflinePay](https://github.com/suhail-tdr/OfflinePay)
+**Suhail PM** ([@suhail-tdr](https://github.com/suhail-tdr))  
+**Abin** ([@abin41](https://github.com/abin41))
+
+Repository: [OfflinePay](https://github.com/suhail-tdr/OfflinePay)
 
 ---
 
